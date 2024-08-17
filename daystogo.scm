@@ -54,8 +54,8 @@
 			display (format #t "No Match for ~a.~%" eventName))))
 
 
-(define year 1959)
-(define mon 9)
+(define year 1964)
+(define mon 4)
 (define mday 27)
 (define zone 0500)
 
