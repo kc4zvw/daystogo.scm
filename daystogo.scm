@@ -1,7 +1,16 @@
 #! /usr/local/bin/guile3 -s
  !#
 
-; $Id: daystogo.scm,v 0.63 2024/08/17 17:00:45 kc4zvw Exp kc4zvw $
+;  ***
+;  ***    Author: David Billsbrough 
+;  ***   Created: Sunday, August 18, 2024 at 18:22:44 PM (EDT)
+;  ***   License: GNU General Public License -- version 2
+;  ***   Version: $Revision: 0.65 $
+;  ***  Warranty: None
+;  ***   Purpose: Calculate the difference in days between two dates
+;  ***
+
+; $Id: daystogo.scm,v 0.65 2024/08/18 22:29:05 kc4zvw Exp kc4zvw $
 
 (use-modules (ice-9 format))
 (use-modules (ice-9 iconv))
@@ -10,23 +19,31 @@
 (use-modules (ice-9 regex))
 (use-modules (ice-9 string-fun))
 
-;
-;  Author: David Billsbrough <kc4zvw@earthlink.net>
-; Revised: Friday, March 10, 2017 at 11:25:52 AM (EST)
-;
 
 (define file (string-copy ".calendar"))
 (define home (string-copy "/home/kc4zvw"))
 (define sep (string-copy "/"))
+
 (define event-date (make-string 15 #\space))
 (define event-name (make-string 60 #\.))
+
+(define dayCount 0)
 (define answer (string-copy "$"))
 (define num 0)
 
-(define Now current-time)
-(define Today (strftime "%A, %B %d, %y at %H:%M:%S (%Z)" (localtime (current-time))))
-(define some-file "/home/kc4zvw/.calendar")
+(define Now (current-time))
 
+(define Today (strftime "%A, %B %d, %y at %H:%M:%S (%Z)" (localtime (current-time))))
+
+(define (as-days secs)
+	(truncate (/ secs 86400)))
+
+(define (date-to-secs str)
+	(car (mktime (car (strptime "%Y/%m/%d" str)))))
+
+; -----
+
+(define some-file "/home/kc4zvw/.calendar")
 
 (define (get_home_dir)
 	; myHOME = ENV["HOME"]
@@ -53,26 +70,39 @@
 		(else
 			display (format #t "No Match for ~a.~%" eventName))))
 
+;-----
 
-(define year 1964)
-(define mon 4)
-(define mday 27)
-(define zone 0500)
+(define delta-days 0)
+(define temp1 (string-copy ""))
 
-;(define dateTarget mktime(year mon mday) zone)
+(define zone 0500)  ;-- not used now
 
-;(define temp dateTarget - Now)
+;(define (target (car str)(date-to-secs (car str))))
+;(define date-target (as-days target))
+(define date-today (as-days Now))
 
-;(display (format #t "time target is ~a~%" dateTarget))
-;(display (format #t "time diff is ~a~%" temp))
-(display (format #f "time now is ~a~%" Now))
+(define num-days1 date-today)
+(define num-days2 0)
 
-; dayCount = temp.to_i
+(define (diff num1 num2) (- num2 num1))
 
+(define (calc-dates num-days1 num-days2)
+	(begin
+		(set! temp1 (car (mktime (car (strptime "%Y/%m/%d" event-date)))))
+		(set! num-days2 (as-days temp1))
+		(set! delta-days (diff num-days1 num-days2))
+		(set! dayCount delta-days)
 
-;(define formattedDate
-;	((lambda (date0)
-;	(set! date string.append( date0.wday date0.mon date0.day date0.year)))))
+		;(display (format #f "var temp1 is ~a~%" temp1))
+		;(display (format #f "var Now is ~a~%" Now))
+		;(display (format #f "date source is ~a~%" num-days1))
+		;(display (format #f "date target is ~a~%" num-days2))
+		))
+
+(define mydate 0)
+
+;(define (formattedDate d)
+;	(set! mydate (string-append d.wday d.mon d.day d.year)))
 
 
 ;  #==================================###
@@ -81,20 +111,22 @@
 
 (newline)
 (display (format #f "Today's date is ~a.~%" Today))
+;(display (format #f "Today's date is ~a.~%" (formattedDate temp1)))
 (newline)
 
 (define myhome (get_home_dir))
 
 (define fullpath (string-append home sep file))
-(display (format #f "Filename: ~a~%~%" fullpath))
+(display (format #f "Filename: ~a~%" fullpath))
 (newline)
 
 ;(display some-file)
-;(newline)
+(define calendar-file
+  (string-append (or (getenv "HOME") "/home/kc4zvw") "/" ".calendar"))
 
 (begin
-	(define infile (open-input-file some-file))
-	;(define in (open-input-file calendarFile))
+	;(define infile (open-input-file some-file))
+	(define infile (open-input-file calendar-file))
 ;rescue
 ;	print "Couldn't open #{calendarFile} for reading dates.\n"
 ;	exit 2 
@@ -103,19 +135,18 @@
 
 ;  (substring string start end) 
 
-;(define s (string-match ":" line1))
-
 (define (first-loop)
   (let loop ((line (read-line)))
     (if (not (eof-object? line))
       (begin
         ;(format #t "line: ~a\n" line)
         ; process the line
-		(set! event-date (substring line 0 10))
-		(set! event-name (substring line 11))
+		  (set! event-date (substring line 0 10))
+		  (set! event-name (substring line 11))
 
-		(process_line event-date event-name)
-		(output-display num event-name)
+		  (process_line event-date event-name)
+		  (calc-dates num-days1 num-days2)
+		  (output-display dayCount event-name)
 
         (let ((m (string-match "^[ \t]*#" line)))
           (if m (format #t "comment: ~a\n" line)))
@@ -123,17 +154,21 @@
         (loop (read-line))))))
 
 (define (main)
-	(with-input-from-file "/home/kc4zvw/.calendar" first-loop))
+	(begin
+		(with-input-from-file "/home/kc4zvw/.calendar" first-loop)))
 	
 (main)
 
+(newline)
 ;(set! num 20)
 ;(output-display num "No Event 5")
 
 ; close input file
 (close-input-port infile)
 
-(newline)
 (pretty-print "End of report")
+
+; vim: tabstop=3 nowrap syntax=scheme :
+
 
 ; End of script
