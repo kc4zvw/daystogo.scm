@@ -20,16 +20,14 @@
 (use-modules (ice-9 string-fun))
 
 
-(define file (string-copy ".calendar"))
-(define home (string-copy "/home/kc4zvw"))
-(define sep (string-copy "/"))
+(define calfile ".calendar")
+(define sep "/")
 
 (define event-date (make-string 15 #\space))
 (define event-name (make-string 60 #\.))
 
 (define dayCount 0)
 (define answer (string-copy "$"))
-(define num 0)
 
 (define Now (current-time))
 
@@ -41,9 +39,12 @@
 (define (date-to-secs str)
 	(car (mktime (car (strptime "%Y/%m/%d" str)))))
 
-; -----
+(define mydate 0)
 
-(define some-file "/home/kc4zvw/.calendar")
+;(define (formattedDate d)
+;	(set! mydate (string-append d.wday d.mon d.day d.year)))
+
+; -----
 
 (define (get_home_dir)
 	; myHOME = ENV["HOME"]
@@ -53,7 +54,8 @@
 (define (process_line event-date event-name)
 	(set! answer (string-append "Date=" event-date ":Event=" event-name))
 	;(display (format #f "result: ~s ~%" answer))
-	)
+	(calc-dates num-days1 num-days2)
+	(output-display dayCount event-name))
 
 (define (output-display dayCount eventName)
 	(cond
@@ -99,11 +101,6 @@
 		;(display (format #f "date target is ~a~%" num-days2))
 		))
 
-(define mydate 0)
-
-;(define (formattedDate d)
-;	(set! mydate (string-append d.wday d.mon d.day d.year)))
-
 
 ;  #==================================###
 ;  #     Main program begins here      ##
@@ -111,42 +108,35 @@
 
 (newline)
 (display (format #f "Today's date is ~a.~%" Today))
-;(display (format #f "Today's date is ~a.~%" (formattedDate temp1)))
 (newline)
 
 (define myhome (get_home_dir))
 
-(define fullpath (string-append home sep file))
-(display (format #f "Filename: ~a~%" fullpath))
-(newline)
-
-;(display some-file)
 (define calendar-file
-  (string-append (or (getenv "HOME") "/home/kc4zvw") "/" ".calendar"))
+  (string-append (or (getenv "HOME") "/home/kc4zvw") sep ".calendar"))
 
 (begin
-	;(define infile (open-input-file some-file))
 	(define infile (open-input-file calendar-file))
 ;rescue
-;	print "Couldn't open #{calendarFile} for reading dates.\n"
+;	(format #f  "Couldn't open ~a for reading dates.~%" calendar-file)
 ;	exit 2 
-;end
-)
+  )
 
-;  (substring string start end) 
+(display (format #f "Filename: ~a~%" calendar-file))
+(newline)
+
+; do main loop though the calendar file
 
 (define (first-loop)
   (let loop ((line (read-line)))
     (if (not (eof-object? line))
       (begin
         ;(format #t "line: ~a\n" line)
-        ; process the line
 		  (set! event-date (substring line 0 10))
 		  (set! event-name (substring line 11))
 
+        ; process the line
 		  (process_line event-date event-name)
-		  (calc-dates num-days1 num-days2)
-		  (output-display dayCount event-name)
 
         (let ((m (string-match "^[ \t]*#" line)))
           (if m (format #t "comment: ~a\n" line)))
@@ -155,20 +145,16 @@
 
 (define (main)
 	(begin
-		(with-input-from-file "/home/kc4zvw/.calendar" first-loop)))
+		(with-input-from-file calendar-file first-loop)))
 	
 (main)
 
 (newline)
-;(set! num 20)
-;(output-display num "No Event 5")
-
 ; close input file
 (close-input-port infile)
 
 (pretty-print "End of report")
 
-; vim: tabstop=3 nowrap syntax=scheme :
-
+; vim: tabstop=3 nowrap syntax=scheme:
 
 ; End of script
